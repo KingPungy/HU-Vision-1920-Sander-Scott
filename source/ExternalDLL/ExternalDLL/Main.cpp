@@ -24,25 +24,39 @@ int main(int argc, char* argv[]) {
 									 // skip any image save function calls
 
 	// loop from here to
-	uint_fast32_t Nmax = 1081, i = 1, succ = 0, fail = 0;
+	uint_fast32_t i = 1, succ = 0, fail = 0;
 
-	std::string name = "real_";
+	std::string name = "real_"; // filename base
 	std::string filename;
+	int dataset = 0;
 
-	for (i = 1; i <= 1081; i++) {
-		//if (i == 101) {
-		//   continue;
-		//}
+
+
+	for (i = 1; i <= 1080; i++) {
+
+		// These pictures caused problems so they are excluded from the tests
+		// the tests uses the first 100 pictures that load and do not crash so every test should be the same.
+		if ((((i == 217 || i == 239) || (i == 397 || i == 479)) ||
+			((i == 481) || i == 573) || (i == 603 || i == 657)) ||
+			((i == 665 || i == 791) || (i == 835 || i == 733))) {
+			continue;
+		}
+
+		// Generate the filename based on the i value
+		// depending on the value of i it needs more 0's in the filename
 		filename = name +
 			((i >= 10) ? ((i >= 100) ? ((i >= 1000) ? "0" : "00") : "000")
 				: "0000") +
 			std::to_string(i) + ".jpg";
 
 		RGBImage* input = ImageFactory::newRGBImage();
+
+		// Load the file from local storage
 		if (!ImageIO::loadImage(
 			"C:\\Users\\Scott Timmermans\\Pictures\\dataset\\training_real\\" +
 			filename,
 			*input)) {
+			// this means the picture does not exist
 			std::cout << "Image " << filename << " could not be loaded!" << std::endl;
 			system("pause");
 			return 0;
@@ -52,36 +66,54 @@ int main(int argc, char* argv[]) {
 
 		DLLExecution* executor = new DLLExecution(input);
 
-		std::cout << filename << std::endl;
-		if (executeSteps(executor)) {
-			std::cout << "Face recognition successful!" << std::endl;
-			succ++;
-			/*
 
-			std::cout << "Facial parameters: " << std::endl;
-			for (int i = 0; i < 16; i++) {
-		  std::cout << (i + 1) << ": " << executor->facialParameters[i]
-					<< std::endl;
+
+		try { // Catch any unwanted errors 
+
+			if (executeSteps(executor)) {// Face recognition was a succes 
+				std::cout << filename << std::endl;
+				std::cout << "Face recognition successful!" << std::endl;
+				succ++;
+
+				/* // if you want the facial parameters when it does work Uncomment this code
+
+				std::cout << "Facial parameters: " << std::endl;
+				for (int i = 0; i < 16; i++) {
+				std::cout << (i + 1) << ": " << executor->facialParameters[i]
+						<< std::endl;
+			}
+
+				*/
+			}
+			else { // Face recognition failed
+				fail++; // If these steps do not work it is a Failure
+			}
+		}
+		catch (...) { // Catch any unwanted errors 
+
+			fail++; // An error is still a failure
+			std::cout << "\t Error caught" << std::endl;
 		}
 
-			*/
-		}
-		else {
-			std::cout << "failure" << std::endl;
-			std::cout << ++fail << std::endl;
-		}
 
 		delete executor;
+
+		dataset++;
+		if (dataset % 100 == 0) { // Check if 100 pictures have been tested
+			std::cout << "Default method dataset : " << dataset / 100 << " succes: " << succ << " failures: " << fail << std::endl;
+			// Reset data for new set
+			succ = 0;
+			fail = 0;
+		}
 	}
-	// here
-	std::cout << "succes: " << succ << " failures: " << fail << std::endl;
+	std::cout << " succes: " << succ << " failures: " << fail << std::endl;
 	system("pause");
 	return 1;
 }
 
 bool executeSteps(DLLExecution* executor) {
 	// Execute the four Pre-processing steps
-	if (!executor->executePreProcessingStep1(false)) {
+	if (!executor->executePreProcessingStep1(true)) { // change this bool to true for student method
 		std::cout << "Pre-processing step 1 failed!" << std::endl;
 		return false;
 	}
